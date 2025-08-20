@@ -40,22 +40,4 @@
   <color name="dark_onBackground">#E6F3F1</color>
   <color name="dark_surface">#0E1716</color>
   <color name="dark_onSurface">#E6F3F1</color>
-
-  <!-- Brand aliases (任意で使う場合) -->
-  <color name="brand_primary">#81CAC4</color>
-  <color name="brand_on_primary">#063A3A</color>
-  <color name="brand_primary_container">#BAEFEB</color>
-  <color name="brand_on_primary_container">#073433</color>
-  <color name="accent_tertiary">#FF7A59</color>
-  <color name="accent_on_tertiary">#FFFFFF</color>
-  <color name="bg_surface">#F7FBFB</color>
-  <color name="text_primary">#111111</color>
-
-  <!-- Categories -->
-  <color name="cat_work">#2BB673</color>
-  <color name="cat_study">#2F6DF6</color>
-  <color name="cat_fun">#FF7A59</color>
-  <color name="cat_tools">#7E57C2</color>
-  <color name="cat_unused_light">#DFECEA</color>
-  <color name="cat_unused_dark">#2A3A39</color>
 </resources>
