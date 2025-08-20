@@ -15,10 +15,23 @@ android {
         versionName = "0.9.0"
     }
 
+    // MainActivity だけを一時的にビルド対象に絞る
+    sourceSets {
+        named("main") {
+            // ソースディレクトリ（必要に応じて kotlin も追加）
+            java.srcDirs("src/main/java")
+            // パッケージに合わせた相対パスで指定
+            java.setIncludes(setOf("com/fightcalendar/app/MainActivity.kt"))
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 
@@ -28,24 +41,9 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
 
-    // Composeを使う場合のみ
+    // Composeを使う場合のみ（不要なら削除）
     buildFeatures { compose = true }
     composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }
-
-    // ここでMainActivity以外を一時除外
-    sourceSets {
-        getByName("main") {
-            java.exclude(
-                "**/di/**",
-                "**/data/**",
-                "**/db/**",
-                "**/domain/**",
-                "**/worker/**",
-                "**/ui/screens/**",
-                "**/ui/theme/**"
-            )
-        }
-    }
 }
 
 dependencies {
@@ -53,6 +51,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
 
+    // Compose（MainActivityの最小UIで使用）
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
