@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag for release (e.g. v0.9.0-beta26)'
+        description: 'Tag for release (e.g. v0.9.0-beta27)'
         required: true
-        default: 'v0.9.0-beta26'
+        default: 'v0.9.0-beta27'
 
 permissions:
   contents: write
@@ -38,9 +38,12 @@ jobs:
           arguments: >
             :app:clean :app:assembleDebug
             --stacktrace --warning-mode all --console=plain
-            -x kaptDebugKotlin -x kaptKotlin
+            -x kaptDebugKotlin
+            -x kaptReleaseKotlin
             -x kaptGenerateStubsDebugKotlin
-            -x kaptReleaseKotlin -x kaptGenerateStubsReleaseKotlin
+            -x kaptGenerateStubsReleaseKotlin
+            -x kaptAndroidTestKotlin
+            -x kaptGenerateStubsAndroidTestKotlin
 
       - name: Prepare artifacts
         shell: bash
