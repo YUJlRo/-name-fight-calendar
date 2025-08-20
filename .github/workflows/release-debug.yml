@@ -97,6 +97,42 @@ jobs:
           find android/app/src/main -name "*.kt" ! -path "*/com/fightcalendar/app/MainActivity.kt" -exec bash -lc 'mv "$1" "$1.bak"' _ {} \; || true
           echo "Remaining Kotlin sources:"
           find android/app/src/main -name "*.kt" -maxdepth 5 | sed 's/^/  /' || true
+- name: Rewrite settings.gradle.kts (clean pluginManagement)
+  shell: bash
+  run: |
+    cat > android/settings.gradle.kts << 'EOF'
+    pluginManagement {
+      repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+      }
+    }
+    dependencyResolutionManagement {
+      repositories {
+        google()
+        mavenCentral()
+      }
+    }
+    rootProject.name = "fight-calendar"
+    include(":app")
+    EOF
+    sed -i 's/\r$//' android/settings.gradle.kts
+    perl -0777 -pe 's/^\x{FEFF}//' -i android/settings.gradle.kts
+    head -n 6 android/settings.gradle.kts || true
+
+- name: Rewrite root build.gradle.kts (declare plugin versions)
+  shell: bash
+  run: |
+    cat > android/build.gradle.kts << 'EOF'
+    plugins {
+        id("com.android.application") version "8.5.2" apply false
+        id("org.jetbrains.kotlin.android") version "1.9.24" apply false
+    }
+    EOF
+    sed -i 's/\r$//' android/build.gradle.kts
+    perl -0777 -pe 's/^\x{FEFF}//' -i android/build.gradle.kts
+    cat android/build.gradle.kts || true
 
       - name: Assemble app (no wrapper)
         uses: gradle/gradle-build-action@v3
