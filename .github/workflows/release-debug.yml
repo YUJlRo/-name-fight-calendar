@@ -62,25 +62,26 @@ jobs:
           echo "----- gradle.properties -----"
           cat android/gradle.properties
 
-      # Kotlinのエラーだけ先に抽出（原因特定用）
-      - name: Compile Kotlin (capture only)
+      # 失敗時の原因特定用：ビルド全体ログを捕捉してFAILURE部だけ出力
+      - name: Assemble app (capture full log)
         working-directory: android
         shell: bash
         run: |
-          ./gradlew :app:compileDebugKotlin --stacktrace --warning-mode all -Dorg.gradle.console=plain 2>&1 | tee kotlin.log || true
-          echo "──── Kotlin errors (top 200 lines) ────"
-          awk '/^e: /{show=1} show{print} /^(> Task|BUILD (SUCCESSFUL|FAILED)|FAILURE:)/{show=0}' kotlin.log | head -n 200 || true
-          echo "───────────────────────────────────────"
+          ./gradlew :app:assembleDebug --stacktrace --warning-mode all -Dorg.gradle.console=plain 2>&1 | tee build.log || true
+          echo "──── FAILURE section (last 200 lines) ────"
+          tail -n 400 build.log | sed -n '/^FAILURE: Build failed/,$p' | head -n 200 || true
+          echo "──────────────────────────────────────────"
         continue-on-error: true
 
-      - name: Upload kotlin.log
+      - name: Upload build.log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: kotlin-log
-          path: android/kotlin.log
+          name: build-log
+          path: android/build.log
           if-no-files-found: ignore
 
+      # 通常のAPK生成（成功すればこの後のリリースまで進む）
       - name: Build debug APK (Gradle 8.7)
         uses: gradle/gradle-build-action@v3
         with:
