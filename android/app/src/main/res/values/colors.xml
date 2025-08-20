@@ -1,5 +1,47 @@
 <resources>
-  <!-- Brand -->
+  <!-- Light scheme -->
+  <color name="light_primary">#81CAC4</color>
+  <color name="light_onPrimary">#063A3A</color>
+  <color name="light_primaryContainer">#BAEFEB</color>
+  <color name="light_onPrimaryContainer">#073433</color>
+
+  <color name="light_secondary">#0F3B46</color>
+  <color name="light_onSecondary">#E0F7F5</color>
+  <color name="light_secondaryContainer">#CFEFED</color>
+  <color name="light_onSecondaryContainer">#073433</color>
+
+  <color name="light_tertiary">#FF7A59</color>
+  <color name="light_onTertiary">#FFFFFF</color>
+  <color name="light_tertiaryContainer">#FFD3C7</color>
+  <color name="light_onTertiaryContainer">#4A1B10</color>
+
+  <color name="light_background">#FFFFFF</color>
+  <color name="light_onBackground">#111111</color>
+  <color name="light_surface">#F7FBFB</color>
+  <color name="light_onSurface">#111111</color>
+
+  <!-- Dark scheme -->
+  <color name="dark_primary">#5DB5AF</color>
+  <color name="dark_onPrimary">#041E1E</color>
+  <color name="dark_primaryContainer">#0E3432</color>
+  <color name="dark_onPrimaryContainer">#C7F6F1</color>
+
+  <color name="dark_secondary">#0B2C33</color>
+  <color name="dark_onSecondary">#D5F2EF</color>
+  <color name="dark_secondaryContainer">#0E3432</color>
+  <color name="dark_onSecondaryContainer">#C7F6F1</color>
+
+  <color name="dark_tertiary">#FF8A6B</color>
+  <color name="dark_onTertiary">#1F0E0B</color>
+  <color name="dark_tertiaryContainer">#5B2B21</color>
+  <color name="dark_onTertiaryContainer">#FFDAD3</color>
+
+  <color name="dark_background">#0E1716</color>
+  <color name="dark_onBackground">#E6F3F1</color>
+  <color name="dark_surface">#0E1716</color>
+  <color name="dark_onSurface">#E6F3F1</color>
+
+  <!-- Brand aliases (任意で使う場合) -->
   <color name="brand_primary">#81CAC4</color>
   <color name="brand_on_primary">#063A3A</color>
   <color name="brand_primary_container">#BAEFEB</color>
