@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag for release (e.g. v0.9.0-beta31)'
+        description: 'Tag for release (e.g. v0.9.0-beta32)'
         required: true
-        default: 'v0.9.0-beta31'
+        default: 'v0.9.0-beta32'
 
 permissions:
   contents: write
@@ -15,34 +15,49 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
         with:
           api-level: 34
           build-tools: '34.0.0'
-
       - name: Ensure local.properties
         run: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
 
-      # MainActivity 以外のディレクトリをCI内で一時退避
-      - name: Temporarily hide extra source directories
+      - name: Rewrite AndroidManifest.xml (no BOM, minimal)
         shell: bash
         run: |
-          set -eux
-          base_java="android/app/src/main/java/com/fightcalendar/app"
-          base_kt="android/app/src/main/kotlin/com/fightcalendar/app"
-          for dir in di data db domain worker "ui/screens" "ui/theme"; do
-            [ -d "$base_java/$dir" ] && mv "$base_java/$dir" "$base_java/_bak_${dir//\//_}"
-            [ -d "$base_kt/$dir" ] && mv "$base_kt/$dir" "$base_kt/_bak_${dir//\//_}"
-          done
-          echo "Remaining Kotlin sources:"
-          find android/app/src/main -name "*.kt" -maxdepth 5 | sed 's/^/  /' || true
+          cat > android/app/src/main/AndroidManifest.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.fightcalendar.app">
+
+              <application
+                  android:allowBackup="true"
+                  android:label="Fight Calendar"
+                  android:icon="@android:drawable/sym_def_app_icon"
+                  android:roundIcon="@android:drawable/sym_def_app_icon"
+                  android:supportsRtl="true"
+                  android:theme="@android:style/Theme.Material.Light.NoActionBar">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+
+              </application>
+          </manifest>
+          EOF
+          sed -i 's/\r$//' android/app/src/main/AndroidManifest.xml
+          perl -0777 -pe 's/^\x{FEFF}//' -i android/app/src/main/AndroidManifest.xml
+          head -n 3 android/app/src/main/AndroidManifest.xml
 
       - name: Assemble app (no wrapper)
         uses: gradle/gradle-build-action@v3
