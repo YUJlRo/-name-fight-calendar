@@ -45,23 +45,3 @@ jobs:
           kotlin.code.style=official
           org.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8
           EOF
-
-      # これ1本でビルド＋ログ保存＋末尾表示
-      - name: Assemble (capture full log)
-        working-directory: android
-        shell: bash
-        run: |
-          set -o pipefail
-          ./gradlew :app:assembleDebug --no-daemon --stacktrace --warning-mode all -Dorg.gradle.console=plain 2>&1 | tee build.log || true
-          echo "──── Last 400 lines of build.log ────" | tee -a "$GITHUB_STEP_SUMMARY"
-          tail -n 400 build.log | tee -a "$GITHUB_STEP_SUMMARY" || true
-          echo "──────────────────────────────────────" | tee -a "$GITHUB_STEP_SUMMARY"
-        continue-on-error: true
-
-      - name: Upload build.log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: android/build.log
-          if-no-files-found: warn
