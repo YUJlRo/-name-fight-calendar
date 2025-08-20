@@ -1,8 +1,6 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("kotlin-kapt")
-    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -30,30 +28,27 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
 
-    // Compose使うならON（不要なら下2行削除可）
+    // Composeを使う場合
     buildFeatures { compose = true }
     composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }
 }
 
 dependencies {
+    // Material3テーマ
     implementation("com.google.android.material:material:1.12.0")
 
+    // 基本
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
 
-    // Compose（使っていないなら削除可）
+    // Compose（使っていなければ下は削除OK）
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.activity:activity-compose:1.9.0")
 
+    // WorkManager / Glance（必要なら）
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation("androidx.glance:glance-appwidget:1.0.0")
-
-    implementation("com.google.dagger:hilt-android:2.51.1")
-    kapt("com.google.dagger:hilt-compiler:2.51.1")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 }
-
-kapt { correctErrorTypes = true }
