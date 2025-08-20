@@ -1,7 +1,4 @@
-plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-}
+plugins { id("com.android.application") id("org.jetbrains.kotlin.android") }
 
 android { namespace = "com.fightcalendar.app" // 実プロジェクトのnamespaceに合わせる compileSdk = 34
 
@@ -22,6 +19,6 @@ compileOptions {
 }
 kotlinOptions { jvmTarget = "17" }
 
-// Compose を使っている場合は有効化（使っていなければ消してOK）
+// Compose を使っている場合のみ有効化（不要なら下2行は削除）
 buildFeatures { compose = true }
 composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }
