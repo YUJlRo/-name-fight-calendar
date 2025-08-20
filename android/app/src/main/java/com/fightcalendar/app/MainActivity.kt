@@ -1,23 +1,23 @@
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.fightcalendar.app">
+package com.fightcalendar.app
 
-    <application
-        android:allowBackup="true"
-        android:label="Fight Calendar"
-        android:icon="@android:drawable/sym_def_app_icon"
-        android:roundIcon="@android:drawable/sym_def_app_icon"
-        android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+import android.os.Bundle
+import android.view.Gravity
+import android.widget.FrameLayout
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-        </activity>
+class MainActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-    </application>
-</manifest>
+        val root = FrameLayout(this)
+        val tv = TextView(this).apply {
+            text = "Fight Calendar"
+            textSize = 20f
+            setPadding(32, 32, 32, 32)
+            gravity = Gravity.CENTER
+        }
+        root.addView(tv)
+        setContentView(root)
+    }
+}
