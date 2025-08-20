@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag for release (e.g. v0.9.0-beta14)'
+        description: 'Tag for release (e.g. v0.9.0-beta16)'
         required: true
-        default: 'v0.9.0-beta14'
+        default: 'v0.9.0-beta16'
 
 permissions:
   contents: write
@@ -21,7 +21,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # 安定の v2（api-level / build-tools を直指定）
+      # 安定の v2（api-level / build-tools 直指定）
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
         with:
@@ -31,40 +31,36 @@ jobs:
       - name: Write local.properties
         run: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
 
-      # settings.gradle.kts を削除 → 改行保証で再作成（pluginManagement + repositories を付与）
-      - name: Reset settings.gradle.kts with pluginManagement
+      # settings を改行保証で再作成
+      - name: Reset settings.gradle.kts (force newline)
         shell: bash
         run: |
           rm -f android/settings.gradle android/settings.gradle.kts
           cat > android/settings.gradle.kts << 'EOF'
           pluginManagement {
-            repositories {
-              google()
-              mavenCentral()
-              gradlePluginPortal()
-            }
+            repositories { google(); mavenCentral(); gradlePluginPortal() }
           }
           dependencyResolutionManagement {
-            repositories {
-              google()
-              mavenCentral()
-            }
+            repositories { google(); mavenCentral() }
           }
           rootProject.name = "fight-calendar"
           include(":app")
           EOF
           echo "----- settings.gradle.kts -----"
           nl -ba android/settings.gradle.kts
-          echo "-------------------------------"
 
-      # 参考用：Gradleスクリプトをログ出力（中身を確認）
-      - name: Show root/app build.gradle.kts
+      # これが今回のエラー対策（AndroidXを有効化）
+      - name: Write gradle.properties (AndroidX)
         shell: bash
         run: |
-          echo "----- android/build.gradle.kts -----"
-          [ -f android/build.gradle.kts ] && sed 's/^/  /' android/build.gradle.kts || echo "  (not found)"
-          echo "----- android/app/build.gradle.kts -----"
-          [ -f android/app/build.gradle.kts ] && sed 's/^/  /' android/app/build.gradle.kts || echo "  (not found)"
+          cat > android/gradle.properties << 'EOF'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          kotlin.code.style=official
+          org.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8
+          EOF
+          echo "----- gradle.properties -----"
+          cat android/gradle.properties
 
       - name: Build debug APK (Gradle 8.7)
         uses: gradle/gradle-build-action@v3
