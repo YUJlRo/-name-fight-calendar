@@ -1,3 +1,5 @@
+// android/app/build.gradle.kts
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -15,11 +17,11 @@ android {
         versionName = "0.9.0"
     }
 
-    // 一時的に MainActivity のみをビルド対象に
+    // MainActivity だけを一時的にビルド対象に絞る
     sourceSets {
-        named("main") {
-            java.srcDirs("src/main/java")
-            java.setIncludes(setOf("com/fightcalendar/app/MainActivity.kt"))
+        getByName("main") {
+            java.setSrcDirs(listOf("src/main/java"))
+            java.include("com/fightcalendar/app/MainActivity.kt")
         }
     }
 
