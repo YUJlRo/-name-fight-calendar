@@ -1,5 +1,3 @@
-// android/app/build.gradle.kts
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -15,14 +13,6 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "0.9.0"
-    }
-
-    // MainActivity だけを一時的にビルド対象に絞る
-    sourceSets {
-        getByName("main") {
-            java.setSrcDirs(listOf("src/main/java"))
-            java.include("com/fightcalendar/app/MainActivity.kt")
-        }
     }
 
     buildTypes {
