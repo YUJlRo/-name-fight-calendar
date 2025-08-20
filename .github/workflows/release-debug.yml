@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag for release (e.g. v0.9.0-betaX)'
+        description: 'Tag for release (e.g. v0.9.0-beta26)'
         required: true
-        default: 'v0.9.0-betaX'
+        default: 'v0.9.0-beta26'
 
 permissions:
   contents: write
@@ -27,29 +27,20 @@ jobs:
           api-level: 34
           build-tools: '34.0.0'
 
-      - name: Ensure gradle files
-        shell: bash
-        run: |
-          echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
-          cat > android/settings.gradle.kts << 'EOF'
-          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-          dependencyResolutionManagement { repositories { google(); mavenCentral() } }
-          rootProject.name = "fight-calendar"
-          include(":app")
-          EOF
-          cat > android/gradle.properties << 'EOF'
-          android.useAndroidX=true
-          android.enableJetifier=true
-          kotlin.code.style=official
-          org.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8
-          EOF
+      - name: Ensure local.properties
+        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
 
-      - name: Assemble app (no wrapper, plain console)
+      - name: Assemble app (no wrapper, skip kapt)
         uses: gradle/gradle-build-action@v3
         with:
           build-root-directory: android
           gradle-version: 8.7
-          arguments: :app:assembleDebug --stacktrace --warning-mode all --console=plain
+          arguments: >
+            :app:clean :app:assembleDebug
+            --stacktrace --warning-mode all --console=plain
+            -x kaptDebugKotlin -x kaptKotlin
+            -x kaptGenerateStubsDebugKotlin
+            -x kaptReleaseKotlin -x kaptGenerateStubsReleaseKotlin
 
       - name: Prepare artifacts
         shell: bash
