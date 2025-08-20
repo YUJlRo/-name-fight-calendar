@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag for release (e.g. v0.9.0-beta12)'
+        description: 'Tag for release (e.g. v0.9.0-beta13)'
         required: true
-        default: 'v0.9.0-beta12'
+        default: 'v0.9.0-beta13'
 
 permissions:
   contents: write
@@ -21,7 +21,8 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK (v2)
+      # 安定の v2（api-level/build-tools 指定可）
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v2
         with:
           api-level: 34
@@ -30,18 +31,38 @@ jobs:
       - name: Write local.properties
         run: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
 
-      - name: Create settings.gradle.kts
-        run: bash -lc 'if [ ! -f android/settings.gradle ] && [ ! -f android/settings.gradle.kts ]; then echo '\''rootProject.name = "fight-calendar"'\'' > android/settings.gradle.kts && echo '\''include(":app")'\'' >> android/settings.gradle.kts; fi; echo "---"; cat android/settings.gradle.kts'
+      # 既存の settings.* を削除してから、改行入りで再作成（heredoc）
+      - name: Reset settings.gradle.kts (force newline)
+        shell: bash
+        run: |
+          rm -f android/settings.gradle android/settings.gradle.kts
+          cat > android/settings.gradle.kts << 'EOF'
+          rootProject.name = "fight-calendar"
+          include(":app")
+          EOF
+          echo "----- settings.gradle.kts -----"
+          nl -ba android/settings.gradle.kts
+          echo "-------------------------------"
+          find android -maxdepth 2 -type f | sed 's/^/  /'
 
       - name: Build debug APK (Gradle 8.7)
         uses: gradle/gradle-build-action@v3
         with:
           build-root-directory: android
           gradle-version: 8.7
-          arguments: :app:assembleDebug
+          arguments: :app:assembleDebug --stacktrace --info
 
       - name: Prepare artifacts
-        run: bash -lc 'APK=$(find android -path "*/outputs/apk/debug/*.apk" -name "*.apk" | head -n 1) && echo "APK=$APK" && mkdir -p artifacts && cp "$APK" artifacts/app-debug.apk && sha256sum artifacts/app-debug.apk | tee artifacts/SHA256.txt'
+        shell: bash
+        run: |
+          APK=$(find android -path "*/outputs/apk/debug/*.apk" -name "*.apk" | head -n 1)
+          if [ -z "$APK" ]; then
+            echo "::error::Debug APK not found. If your module name is not 'app', change the task to ':yourModule:assembleDebug'."
+            exit 1
+          fi
+          mkdir -p artifacts
+          cp "$APK" artifacts/app-debug.apk
+          sha256sum artifacts/app-debug.apk | tee artifacts/SHA256.txt
 
       - name: Create release
         uses: softprops/action-gh-release@v2
