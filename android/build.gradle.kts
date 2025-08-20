@@ -1,14 +1,21 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-plugins {
-    id("com.android.application") version "8.1.4" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.10" apply false
-    id("com.google.dagger.hilt.android") version "2.48" apply false
+android { namespace = "com.fightcalendar.app" // 実プロジェクトのnamespaceに合わせて compileSdk = 34
+
+defaultConfig {
+    minSdk = 26
+    targetSdk = 34
+    versionCode = 1
+    versionName = "0.9.0"
 }
 
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        maven { url = uri("https://jitpack.io") }
+buildTypes {
+    getByName("release") {
+        isMinifyEnabled = false
     }
+}
+compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+kotlinOptions {
+    jvmTarget = "17"
 }
