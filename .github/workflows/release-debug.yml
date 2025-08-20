@@ -21,17 +21,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # v3 は packages でSDKコンポーネントを指定
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v2
         with:
-          cmdline-tools-version: 11076708
-          packages: |
-            platform-tools
-            platforms;android-34
-            build-tools;34.0.0
+          api-level: 34
+          build-tools: '34.0.0'
 
-      # SDKパスと settings を保証（無ければ作成）
       - name: Ensure local.properties and settings
         run: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
@@ -40,8 +35,7 @@ jobs:
           fi
           ls -la android
 
-      # まずは確実に動かすため gradle-build-action を使用（後で置換可）
-      - name: Build debug APK (Gradle 8.6)
+      - name: Build debug APK
         uses: gradle/gradle-build-action@v3
         with:
           build-root-directory: android
