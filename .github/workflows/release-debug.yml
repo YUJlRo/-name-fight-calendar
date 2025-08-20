@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag for release (e.g. v0.9.0-beta30)'
+        description: 'Tag for release (e.g. v0.9.0-beta31)'
         required: true
-        default: 'v0.9.0-beta30'
+        default: 'v0.9.0-beta31'
 
 permissions:
   contents: write
@@ -29,6 +29,20 @@ jobs:
 
       - name: Ensure local.properties
         run: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+
+      # MainActivity 以外のディレクトリをCI内で一時退避
+      - name: Temporarily hide extra source directories
+        shell: bash
+        run: |
+          set -eux
+          base_java="android/app/src/main/java/com/fightcalendar/app"
+          base_kt="android/app/src/main/kotlin/com/fightcalendar/app"
+          for dir in di data db domain worker "ui/screens" "ui/theme"; do
+            [ -d "$base_java/$dir" ] && mv "$base_java/$dir" "$base_java/_bak_${dir//\//_}"
+            [ -d "$base_kt/$dir" ] && mv "$base_kt/$dir" "$base_kt/_bak_${dir//\//_}"
+          done
+          echo "Remaining Kotlin sources:"
+          find android/app/src/main -name "*.kt" -maxdepth 5 | sed 's/^/  /' || true
 
       - name: Assemble app (no wrapper)
         uses: gradle/gradle-build-action@v3
