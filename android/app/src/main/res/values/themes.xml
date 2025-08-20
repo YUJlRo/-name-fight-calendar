@@ -1,35 +1,42 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Light Theme -->
-    <style name="Theme.FightCalendar" parent="Theme.Material3.DayNight">
-        <!-- Primary Colors -->
-        <item name="colorPrimary">@color/light_primary</item>
-        <item name="colorOnPrimary">@color/light_onPrimary</item>
-        <item name="colorPrimaryContainer">@color/light_primaryContainer</item>
-        <item name="colorOnPrimaryContainer">@color/light_onPrimaryContainer</item>
-        
-        <!-- Secondary Colors -->
-        <item name="colorSecondary">@color/light_secondary</item>
-        <item name="colorOnSecondary">@color/light_onSecondary</item>
-        
-        <!-- Tertiary Colors -->
-        <item name="colorTertiary">@color/light_tertiary</item>
-        <item name="colorOnTertiary">@color/light_onTertiary</item>
-        
-        <!-- Background & Surface -->
-        <item name="android:colorBackground">@color/light_background</item>
-        <item name="colorSurface">@color/light_surface</item>
-        <item name="colorOnBackground">@color/light_onBackground</item>
-        <item name="colorOnSurface">@color/light_onSurface</item>
-        
-        <!-- Disable Dynamic Colors -->
-        <item name="dynamicColorThemeOverlay">@null</item>
-    </style>
-    
-    <!-- Splash Screen Theme -->
-    <style name="Theme.FightCalendar.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/light_primary</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_whale</item>
-        <item name="postSplashScreenTheme">@style/Theme.FightCalendar</item>
-    </style>
+  <style name="AppTheme" parent="Theme.Material3.DayNight">
+    <item name="colorPrimary">@color/light_primary</item>
+    <item name="colorOnPrimary">@color/light_onPrimary</item>
+    <item name="colorPrimaryContainer">@color/light_primaryContainer</item>
+    <item name="colorOnPrimaryContainer">@color/light_onPrimaryContainer</item>
+
+    <item name="colorSecondary">@color/light_secondary</item>
+    <item name="colorOnSecondary">@color/light_onSecondary</item>
+    <item name="colorSecondaryContainer">@color/light_secondaryContainer</item>
+    <item name="colorOnSecondaryContainer">@color/light_onSecondaryContainer</item>
+
+    <item name="colorTertiary">@color/light_tertiary</item>
+    <item name="colorOnTertiary">@color/light_onTertiary</item>
+
+    <item name="colorSurface">@color/light_surface</item>
+    <item name="colorOnSurface">@color/light_onSurface</item>
+
+    <!-- optional -->
+    <item name="android:statusBarColor">@color/light_primary</item>
+    <item name="android:navigationBarColor">@color/light_surface</item>
+  </style>
+</resources>
+<resources>
+  <style name="AppTheme" parent="Theme.Material3.DayNight">
+    <item name="colorPrimary">@color/dark_primary</item>
+    <item name="colorOnPrimary">@color/dark_onPrimary</item>
+    <item name="colorPrimaryContainer">@color/dark_primaryContainer</item>
+    <item name="colorOnPrimaryContainer">@color/dark_onPrimaryContainer</item>
+
+    <item name="colorSecondary">@color/dark_secondary</item>
+    <item name="colorOnSecondary">@color/dark_onSecondary</item>
+    <item name="colorSecondaryContainer">@color/dark_secondaryContainer</item>
+    <item name="colorOnSecondaryContainer">@color/dark_onSecondaryContainer</item>
+
+    <item name="colorTertiary">@color/dark_tertiary</item>
+    <item name="colorOnTertiary">@color/dark_onTertiary</item>
+
+    <item name="colorSurface">@color/dark_surface</item>
+    <item name="colorOnSurface">@color/dark_onSurface</item>
+  </style>
 </resources>
