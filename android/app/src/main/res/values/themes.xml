@@ -21,22 +21,3 @@
     <item name="android:navigationBarColor">@color/light_surface</item>
   </style>
 </resources>
-<resources>
-  <style name="AppTheme" parent="Theme.Material3.DayNight">
-    <item name="colorPrimary">@color/dark_primary</item>
-    <item name="colorOnPrimary">@color/dark_onPrimary</item>
-    <item name="colorPrimaryContainer">@color/dark_primaryContainer</item>
-    <item name="colorOnPrimaryContainer">@color/dark_onPrimaryContainer</item>
-
-    <item name="colorSecondary">@color/dark_secondary</item>
-    <item name="colorOnSecondary">@color/dark_onSecondary</item>
-    <item name="colorSecondaryContainer">@color/dark_secondaryContainer</item>
-    <item name="colorOnSecondaryContainer">@color/dark_onSecondaryContainer</item>
-
-    <item name="colorTertiary">@color/dark_tertiary</item>
-    <item name="colorOnTertiary">@color/dark_onTertiary</item>
-
-    <item name="colorSurface">@color/dark_surface</item>
-    <item name="colorOnSurface">@color/dark_onSurface</item>
-  </style>
-</resources>
