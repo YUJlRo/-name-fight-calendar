@@ -15,9 +15,5 @@
 
     <item name="colorSurface">@color/light_surface</item>
     <item name="colorOnSurface">@color/light_onSurface</item>
-
-    <!-- optional -->
-    <item name="android:statusBarColor">@color/light_primary</item>
-    <item name="android:navigationBarColor">@color/light_surface</item>
   </style>
 </resources>
