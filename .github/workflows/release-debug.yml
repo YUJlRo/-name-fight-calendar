@@ -30,20 +30,15 @@ jobs:
       - name: Ensure local.properties
         run: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
 
-      - name: Assemble app (no wrapper, skip kapt)
-        uses: gradle/gradle-build-action@v3
-        with:
-          build-root-directory: android
-          gradle-version: 8.7
-          arguments: >
-            :app:clean :app:assembleDebug
-            --stacktrace --warning-mode all --console=plain
-            -x kaptDebugKotlin
-            -x kaptReleaseKotlin
-            -x kaptGenerateStubsDebugKotlin
-            -x kaptGenerateStubsReleaseKotlin
-            -x kaptAndroidTestKotlin
-            -x kaptGenerateStubsAndroidTestKotlin
+      - name: Assemble app (no wrapper)
+  uses: gradle/gradle-build-action@v3
+  with:
+    build-root-directory: android
+    gradle-version: 8.7
+    arguments: >
+      :app:clean :app:assembleDebug
+      --stacktrace --warning-mode all --console=plain
+
 
       - name: Prepare artifacts
         shell: bash
