@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag for release (e.g. v0.9.0-beta16)'
+        description: 'Tag for release (e.g. v0.9.0-betaX)'
         required: true
-        default: 'v0.9.0-beta16'
+        default: 'v0.9.0-betaX'
 
 permissions:
   contents: write
@@ -21,56 +21,41 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # 安定の v2（api-level / build-tools 直指定）
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
         with:
           api-level: 34
           build-tools: '34.0.0'
 
-      - name: Write local.properties
-        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
-
-      # settings を改行保証で再作成
-      - name: Reset settings.gradle.kts (force newline)
+      - name: Ensure gradle files
         shell: bash
         run: |
-          rm -f android/settings.gradle android/settings.gradle.kts
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+          # settings.gradle.kts（念のため再生成）
           cat > android/settings.gradle.kts << 'EOF'
-          pluginManagement {
-            repositories { google(); mavenCentral(); gradlePluginPortal() }
-          }
-          dependencyResolutionManagement {
-            repositories { google(); mavenCentral() }
-          }
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositories { google(); mavenCentral() } }
           rootProject.name = "fight-calendar"
           include(":app")
           EOF
-          echo "----- settings.gradle.kts -----"
-          nl -ba android/settings.gradle.kts
-
-      # AndroidXを有効化
-      - name: Write gradle.properties (AndroidX)
-        shell: bash
-        run: |
+          # AndroidX
           cat > android/gradle.properties << 'EOF'
           android.useAndroidX=true
           android.enableJetifier=true
           kotlin.code.style=official
           org.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8
           EOF
-          echo "----- gradle.properties -----"
-          cat android/gradle.properties
 
-      # 失敗時の原因特定用：ビルド全体ログを捕捉してFAILURE部だけ出力
-      - name: Assemble app (capture full log)
+      # これ1本でビルド＋ログ保存＋末尾表示
+      - name: Assemble (capture full log)
         working-directory: android
         shell: bash
         run: |
-          ./gradlew :app:assembleDebug --stacktrace --warning-mode all -Dorg.gradle.console=plain 2>&1 | tee build.log || true
-          echo "──── FAILURE section (last 200 lines) ────"
-          tail -n 400 build.log | sed -n '/^FAILURE: Build failed/,$p' | head -n 200 || true
-          echo "──────────────────────────────────────────"
+          set -o pipefail
+          ./gradlew :app:assembleDebug --no-daemon --stacktrace --warning-mode all -Dorg.gradle.console=plain 2>&1 | tee build.log || true
+          echo "──── Last 400 lines of build.log ────" | tee -a "$GITHUB_STEP_SUMMARY"
+          tail -n 400 build.log | tee -a "$GITHUB_STEP_SUMMARY" || true
+          echo "──────────────────────────────────────" | tee -a "$GITHUB_STEP_SUMMARY"
         continue-on-error: true
 
       - name: Upload build.log
@@ -79,36 +64,4 @@ jobs:
         with:
           name: build-log
           path: android/build.log
-          if-no-files-found: ignore
-
-      # 通常のAPK生成（成功すればこの後のリリースまで進む）
-      - name: Build debug APK (Gradle 8.7)
-        uses: gradle/gradle-build-action@v3
-        with:
-          build-root-directory: android
-          gradle-version: 8.7
-          arguments: :app:assembleDebug --stacktrace --info
-
-      - name: Prepare artifacts
-        if: success()
-        shell: bash
-        run: |
-          APK=$(find android -path "*/outputs/apk/debug/*.apk" -name "*.apk" | head -n 1)
-          if [ -z "$APK" ]; then
-            echo "::error::Debug APK not found. If your module name is not 'app', change the task to ':yourModule:assembleDebug'."
-            exit 1
-          fi
-          mkdir -p artifacts
-          cp "$APK" artifacts/app-debug.apk
-          sha256sum artifacts/app-debug.apk | tee artifacts/SHA256.txt
-
-      - name: Create release
-        if: success()
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.inputs.tag }}
-          name: ${{ github.event.inputs.tag }}
-          prerelease: true
-          files: artifacts/app-debug.apk,artifacts/SHA256.txt
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          if-no-files-found: warn
