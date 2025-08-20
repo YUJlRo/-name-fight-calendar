@@ -21,28 +21,51 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK (v2)
+      # 安定の v2 を使用（api-level / build-tools 可）
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v2
         with:
           api-level: 34
           build-tools: '34.0.0'
 
-      - name: Write local.properties and settings.gradle.kts
+      # SDK パスを書き、settings を2行で生成（壊れていたら補正）
+      - name: Ensure local.properties and settings.gradle.kts
+        shell: bash
         run: |
+          set -e
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
-          printf 'rootProject.name = "fight-calendar"\n' > android/settings.gradle.kts
-          printf 'include(":app")\n' >> android/settings.gradle.kts
+          if [ ! -f android/settings.gradle ] && [ ! -f android/settings.gradle.kts ]; then
+            echo 'rootProject.name = "fight-calendar"' > android/settings.gradle.kts
+            echo 'include(":app")' >> android/settings.gradle.kts
+          else
+            # 1行に潰れているケースを補正
+            sed -i 's/[[:space:]]\+include(/\
+include(/' android/settings.gradle.kts || true
+          fi
           echo "----- settings.gradle.kts -----"
           cat android/settings.gradle.kts
+          echo "----- project tree (depth 2) -----"
+          find android -maxdepth 2 -type f | sed 's/^/  /'
 
+      # まずはタスク一覧を出して、モジュールやタスク名を確認
+      - name: Gradle tasks --all
+        uses: gradle/gradle-build-action@v3
+        with:
+          build-root-directory: android
+          gradle-version: 8.7
+          arguments: tasks --all --stacktrace
+
+      # 詳細ログでビルド（info + stacktrace）。失敗時もログを残す
       - name: Build debug APK
         uses: gradle/gradle-build-action@v3
         with:
           build-root-directory: android
           gradle-version: 8.7
-          arguments: assembleDebug
+          arguments: assembleDebug --info --stacktrace
 
       - name: Collect APK and SHA-256
+        if: success()
+        shell: bash
         run: |
           APK=$(find android -path "*/outputs/apk/debug/*.apk" -name "*.apk" | head -n 1)
           if [ -z "$APK" ]; then
@@ -54,6 +77,7 @@ jobs:
           sha256sum artifacts/app-debug.apk | tee artifacts/SHA256.txt
 
       - name: Create GitHub Release
+        if: success()
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag }}
@@ -64,3 +88,15 @@ jobs:
             artifacts/SHA256.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 失敗時でも Gradle ログをアーティファクトとして回収
+      - name: Archive Gradle logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-logs
+          path: |
+            **/build/reports/**
+            ~/.gradle/**/files-*/**/*
+            ~/.gradle/**/gc.properties
+          if-no-files-found: ignore
