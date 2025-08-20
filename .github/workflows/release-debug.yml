@@ -31,17 +31,43 @@ jobs:
         shell: bash
         run: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
-          # settings.gradle.kts（念のため再生成）
           cat > android/settings.gradle.kts << 'EOF'
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement { repositories { google(); mavenCentral() } }
           rootProject.name = "fight-calendar"
           include(":app")
           EOF
-          # AndroidX
           cat > android/gradle.properties << 'EOF'
           android.useAndroidX=true
           android.enableJetifier=true
           kotlin.code.style=official
           org.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8
           EOF
+
+      - name: Assemble app (no wrapper, plain console)
+        uses: gradle/gradle-build-action@v3
+        with:
+          build-root-directory: android
+          gradle-version: 8.7
+          arguments: :app:assembleDebug --stacktrace --warning-mode all --console=plain
+
+      - name: Prepare artifacts
+        shell: bash
+        run: |
+          APK=$(find android -path "*/outputs/apk/debug/*.apk" -name "*.apk" | head -n 1)
+          echo "APK=$APK"
+          mkdir -p artifacts
+          cp "$APK" artifacts/app-debug.apk
+          sha256sum artifacts/app-debug.apk | tee artifacts/SHA256.txt
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          name: ${{ github.event.inputs.tag }}
+          prerelease: true
+          files: |
+            artifacts/app-debug.apk
+            artifacts/SHA256.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
