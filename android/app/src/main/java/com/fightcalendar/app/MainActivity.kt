@@ -1,23 +1,25 @@
-package com.fightcalendar.app
+package com.fightcalendar.app;
 
-import android.os.Bundle
-import android.view.Gravity
-import android.widget.FrameLayout
-import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
+import android.os.Bundle;
+import android.view.Gravity;
+import android.widget.FrameLayout;
+import android.widget.TextView;
 
-class MainActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+import androidx.appcompat.app.AppCompatActivity;
 
-        val root = FrameLayout(this)
-        val tv = TextView(this).apply {
-            text = "Fight Calendar"
-            textSize = 20f
-            setPadding(32, 32, 32, 32)
-            gravity = Gravity.CENTER
-        }
-        root.addView(tv)
-        setContentView(root)
+public class MainActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        FrameLayout root = new FrameLayout(this);
+        TextView tv = new TextView(this);
+        tv.setText("Fight Calendar");
+        tv.setTextSize(20f);
+        tv.setPadding(32, 32, 32, 32);
+        tv.setGravity(Gravity.CENTER);
+        root.addView(tv);
+
+        setContentView(root);
     }
 }
