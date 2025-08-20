@@ -49,7 +49,7 @@ jobs:
           echo "----- settings.gradle.kts -----"
           nl -ba android/settings.gradle.kts
 
-      # これが今回のエラー対策（AndroidXを有効化）
+      # AndroidXを有効化
       - name: Write gradle.properties (AndroidX)
         shell: bash
         run: |
@@ -61,6 +61,25 @@ jobs:
           EOF
           echo "----- gradle.properties -----"
           cat android/gradle.properties
+
+      # Kotlinのエラーだけ先に抽出（原因特定用）
+      - name: Compile Kotlin (capture only)
+        working-directory: android
+        shell: bash
+        run: |
+          ./gradlew :app:compileDebugKotlin --stacktrace --warning-mode all -Dorg.gradle.console=plain 2>&1 | tee kotlin.log || true
+          echo "──── Kotlin errors (top 200 lines) ────"
+          awk '/^e: /{show=1} show{print} /^(> Task|BUILD (SUCCESSFUL|FAILED)|FAILURE:)/{show=0}' kotlin.log | head -n 200 || true
+          echo "───────────────────────────────────────"
+        continue-on-error: true
+
+      - name: Upload kotlin.log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kotlin-log
+          path: android/kotlin.log
+          if-no-files-found: ignore
 
       - name: Build debug APK (Gradle 8.7)
         uses: gradle/gradle-build-action@v3
