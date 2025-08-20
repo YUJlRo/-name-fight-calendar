@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag for release (e.g. v0.9.0-beta27)'
+        description: 'Tag for release (e.g. v0.9.0-beta30)'
         required: true
-        default: 'v0.9.0-beta27'
+        default: 'v0.9.0-beta30'
 
 permissions:
   contents: write
@@ -31,14 +31,13 @@ jobs:
         run: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
 
       - name: Assemble app (no wrapper)
-  uses: gradle/gradle-build-action@v3
-  with:
-    build-root-directory: android
-    gradle-version: 8.7
-    arguments: >
-      :app:clean :app:assembleDebug
-      --stacktrace --warning-mode all --console=plain
-
+        uses: gradle/gradle-build-action@v3
+        with:
+          build-root-directory: android
+          gradle-version: 8.7
+          arguments: >
+            :app:clean :app:assembleDebug
+            --stacktrace --warning-mode all --console=plain
 
       - name: Prepare artifacts
         shell: bash
