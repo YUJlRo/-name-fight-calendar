@@ -1,85 +1,60 @@
 name: Release debug APK
 
-on:
-  push:
-    tags:
-      - 'v*'
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Tag name to create release (e.g. v0.9.0-beta3)'
-        required: true
-        default: 'v0.9.0-beta3'
+on: push: tags: - 'v*' workflow_dispatch: inputs: tag: description: 'Tag name to create release (e.g. v0.9.0-beta4)' required: true default: 'v0.9.0-beta4'
 
-permissions:
-  contents: write
+permissions: contents: write
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+jobs: build: runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+steps:
+  - name: Checkout
+    uses: actions/checkout@v4
 
-      - name: Setup JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
+  - name: Setup JDK 17
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: 34
-          build-tools: '34.0.0'
+  # v2は api-level / build-tools を受け付けます
+  - name: Setup Android SDK
+    uses: android-actions/setup-android@v2
+    with:
+      api-level: 34
+      build-tools: '34.0.0'
 
-      - name: Detect Android project root
-        shell: bash
-        run: |
-          if [ -f "android/settings.gradle" ] || [ -f "android/settings.gradle.kts" ]; then
-            echo "BUILD_ROOT=android" >> $GITHUB_ENV
-          elif [ -f "アンドロイド/settings.gradle" ] || [ -f "アンドロイド/settings.gradle.kts" ]; then
-            echo "BUILD_ROOT=アンドロイド" >> $GITHUB_ENV
-          elif [ -f "settings.gradle" ] || [ -f "settings.gradle.kts" ]; then
-            echo "BUILD_ROOT=." >> $GITHUB_ENV
-          else
-            echo "::error::Android project not found. Put your project under 'android/' (or rename folder)."
-            exit 1
-          fi
-          echo "Using BUILD_ROOT=$BUILD_ROOT"
+  - name: Ensure local.properties
+    run: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
 
-      - name: Ensure local.properties
-        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > "$BUILD_ROOT/local.properties"
+  # Gradle WrapperなしでOK（Gradle 8.6でビルド）
+  - name: Build debug APK
+    uses: gradle/gradle-build-action@v3
+    with:
+      arguments: assembleDebug
+      gradle-version: 8.6
+      build-root-directory: android
 
-      - name: Build debug APK (no wrapper required)
-        uses: gradle/gradle-build-action@v3
-        with:
-          arguments: assembleDebug
-          gradle-version: 8.7
-          build-root-directory: ${{ env.BUILD_ROOT }}
+  - name: Collect APK and SHA-256
+    shell: bash
+    run: |
+      APK=$(find android -path "*/outputs/apk/debug/*.apk" -name "*.apk" | head -n 1)
+      if [ -z "$APK" ]; then
+        echo "::error::Debug APK not found. Make sure the app module builds with 'assembleDebug'."
+        exit 1
+      fi
+      echo "Found APK: $APK"
+      mkdir -p artifacts
+      cp "$APK" artifacts/app-debug.apk
+      sha256sum artifacts/app-debug.apk | tee artifacts/SHA256.txt
 
-      - name: Collect APK and SHA-256
-        shell: bash
-        run: |
-          APK=$(find "$BUILD_ROOT" -path "*/outputs/apk/debug/*.apk" -name "*.apk" | head -n 1)
-          if [ -z "$APK" ]; then
-            echo "::error::Debug APK not found. Make sure the app module builds with 'assembleDebug'."
-            exit 1
-          fi
-          echo "Found APK: $APK"
-          mkdir -p artifacts
-          cp "$APK" artifacts/app-debug.apk
-          sha256sum artifacts/app-debug.apk | tee artifacts/SHA256.txt
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
-          name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
-          prerelease: true
-          files: |
-            artifacts/app-debug.apk
-            artifacts/SHA256.txt
+  - name: Create GitHub Release
+    uses: softprops/action-gh-release@v2
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    with:
+      tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
+      name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
+      prerelease: true
+      files: |
+        artifacts/app-debug.apk
+        artifacts/SHA256.txt
