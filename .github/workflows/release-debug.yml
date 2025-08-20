@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag for release (e.g. v0.9.0-beta8)'
+        description: 'Tag for release (e.g. v0.9.0-beta9)'
         required: true
-        default: 'v0.9.0-beta8'
+        default: 'v0.9.0-beta9'
 permissions:
   contents: write
 jobs:
@@ -21,18 +21,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # v3 は packages 方式。キー名を正しく指定
+      # v2 は api-level / build-tools を受け付けます（ライセンス受諾も自動）
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v2
         with:
-          cmdline-tools-version: 11076708
-          accept-android-sdk-licenses: true
-          log-accepted-android-sdk-licenses: true
-          packages: |
-            platform-tools
-            platforms;android-34
-            build-tools;34.0.0
+          api-level: 34
+          build-tools: '34.0.0'
 
+      # SDKパスと settings を保証（なければ作る）
       - name: Ensure local.properties and settings
         run: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
@@ -41,8 +37,8 @@ jobs:
           fi
           ls -la android
 
-      # まずは確実に通す（gradle-build-actionは警告OK）
-      - name: Build debug APK (Gradle 8.7)
+      # Gradle 8.7 をダウンロードして実行（wrapper不要）
+      - name: Build debug APK
         uses: gradle/gradle-build-action@v3
         with:
           build-root-directory: android
