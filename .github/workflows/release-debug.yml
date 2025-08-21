@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag for release (e.g. v0.9.0-beta36)'
+        description: 'Tag for release (e.g. v0.9.0-beta37)'
         required: true
-        default: 'v0.9.0-beta36'
+        default: 'v0.9.0-beta37'
 
 permissions:
   contents: write
@@ -35,24 +35,14 @@ jobs:
         run: |
           cat > android/settings.gradle.kts << 'EOF'
           pluginManagement {
-            repositories {
-              google()
-              mavenCentral()
-              gradlePluginPortal()
-            }
+            repositories { google(); mavenCentral(); gradlePluginPortal() }
           }
           dependencyResolutionManagement {
-            repositories {
-              google()
-              mavenCentral()
-            }
+            repositories { google(); mavenCentral() }
           }
           rootProject.name = "fight-calendar"
           include(":app")
           EOF
-          sed -i 's/\r$//' android/settings.gradle.kts
-          perl -0777 -pe 's/^\x{FEFF}//' -i android/settings.gradle.kts
-          head -n 6 android/settings.gradle.kts || true
 
       - name: Rewrite root build.gradle.kts (declare plugin versions)
         shell: bash
@@ -63,9 +53,6 @@ jobs:
               id("org.jetbrains.kotlin.android") version "1.9.24" apply false
           }
           EOF
-          sed -i 's/\r$//' android/build.gradle.kts
-          perl -0777 -pe 's/^\x{FEFF}//' -i android/build.gradle.kts
-          cat android/build.gradle.kts || true
 
       - name: Rewrite AndroidManifest.xml (no BOM, minimal)
         shell: bash
@@ -93,9 +80,6 @@ jobs:
             </application>
           </manifest>
           EOF
-          sed -i 's/\r$//' android/app/src/main/AndroidManifest.xml
-          perl -0777 -pe 's/^\x{FEFF}//' -i android/app/src/main/AndroidManifest.xml
-          head -n 3 android/app/src/main/AndroidManifest.xml || true
 
       - name: Rewrite MainActivity.java (minimal, no Kotlin)
         shell: bash
@@ -129,17 +113,13 @@ jobs:
           }
           EOF
 
-      - name: Temporarily hide Kotlin sources
-        shell: bash
-        run: |
-          find android/app/src/main -name "*.kt" -exec bash -lc 'mv "$1" "$1.bak"' _ {} \; || true
-          echo "Remaining sources:"; find android/app/src/main -maxdepth 5 -type f | sed 's/^/  /' || true
-
-      - name: Wipe all res and create minimal strings.xml
+      - name: Remove all res under any sourceSet and recreate minimal values/strings.xml
         shell: bash
         run: |
           set -eux
-          rm -rf android/app/src/main/res || true
+          # すべてのresを削除（main/debug/releaseなど全ソースセット）
+          find android/app/src -type d -name "res" -exec rm -rf {} + || true
+          # main に最小の values/strings.xml を作成
           mkdir -p android/app/src/main/res/values
           cat > android/app/src/main/res/values/strings.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
@@ -148,9 +128,16 @@ jobs:
           </resources>
           EOF
           echo "Remaining res XML:"
-          find android/app/src/main/res -name "*.xml" -maxdepth 3 | sed 's/^/  /' || true
+          find android/app/src -name "*.xml" -maxdepth 5 | sed 's/^/  /' || true
 
-      - name: Assemble app (no wrapper)
+      - name: Find references to Material3/theme attributes (debug aid)
+        shell: bash
+        run: |
+          echo "---- Grep Theme.Material3 / colorOnPrimary references ----"
+          (grep -RIn "Theme.Material3" android/app || true) | sed 's/^/  /'
+          (grep -RIn "colorOnPrimary" android/app || true) | sed 's/^/  /'
+
+      - name: Clean and Assemble app (no wrapper)
         uses: gradle/gradle-build-action@v3
         with:
           build-root-directory: android
@@ -165,10 +152,13 @@ jobs:
           APK=$(find android -path "*/outputs/apk/debug/*.apk" -name "*.apk" | head -n 1)
           echo "APK=$APK"
           mkdir -p artifacts
-          cp "$APK" artifacts/app-debug.apk
-          sha256sum artifacts/app-debug.apk | tee artifacts/SHA256.txt
+          if [ -n "$APK" ]; then
+            cp "$APK" artifacts/app-debug.apk
+            sha256sum artifacts/app-debug.apk | tee artifacts/SHA256.txt
+          fi
 
       - name: Create release
+        if: success()
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag }}
