@@ -1,8 +1,4 @@
-// android/app/build.gradle.kts （Java最小構成）
-
-plugins {
-    id("com.android.application")
-}
+plugins { id("com.android.application") }
 
 android {
     namespace = "com.fightcalendar.app"
@@ -19,10 +15,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 
