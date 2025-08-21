@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag for release (e.g. v0.9.0-beta38)'
+        description: 'Tag for release (e.g. v0.9.0-mvp-min-01)'
         required: true
-        default: 'v0.9.0-beta38'
+        default: 'v0.9.0-mvp-min-01'
 
 permissions:
   contents: write
@@ -30,7 +30,7 @@ jobs:
       - name: Ensure local.properties
         run: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
 
-      - name: Rewrite settings.gradle.kts (clean pluginManagement)
+      - name: Rewrite settings.gradle.kts (clean)
         shell: bash
         run: |
           cat > android/settings.gradle.kts << 'EOF'
@@ -40,7 +40,7 @@ jobs:
           include(":app")
           EOF
 
-      - name: Rewrite root build.gradle.kts (declare plugin versions)
+      - name: Rewrite root build.gradle.kts (plugins)
         shell: bash
         run: |
           cat > android/build.gradle.kts << 'EOF'
@@ -50,7 +50,7 @@ jobs:
           }
           EOF
 
-      - name: Rewrite AndroidManifest.xml (no BOM, minimal)
+      - name: Rewrite AndroidManifest.xml (minimal)
         shell: bash
         run: |
           mkdir -p android/app/src/main
@@ -77,7 +77,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: Rewrite MainActivity.java (minimal, no Kotlin)
+      - name: Rewrite MainActivity.java (minimal)
         shell: bash
         run: |
           mkdir -p android/app/src/main/java/com/fightcalendar/app
@@ -109,14 +109,18 @@ jobs:
           }
           EOF
 
-      # すべての res を削除 → 最小 strings.xml / attrs.xml / styles.xml を生成（Material3参照をダミー解決）
+      - name: Temporarily hide Kotlin sources
+        shell: bash
+        run: |
+          find android/app/src/main -name "*.kt" -exec bash -lc 'mv "$1" "$1.bak"' _ {} \; || true
+          echo "Remaining sources:"; find android/app/src/main -maxdepth 5 -type f | sed 's/^/  /' || true
+
       - name: Wipe res and create minimal strings/attrs/styles
         shell: bash
         run: |
           set -eux
           find android/app/src -type d -name "res" -exec rm -rf {} + || true
           mkdir -p android/app/src/main/res/values
-
           # strings.xml
           cat > android/app/src/main/res/values/strings.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
@@ -124,8 +128,7 @@ jobs:
             <string name="app_name">Fight Calendar</string>
           </resources>
           EOF
-
-          # attrs.xml（Material3で参照されがちな属性をダミー定義）
+          # attrs.xml (ダミー属性)
           cat > android/app/src/main/res/values/attrs.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
@@ -143,8 +146,7 @@ jobs:
             <attr name="colorOnSurface" format="color"/>
           </resources>
           EOF
-
-          # styles.xml（Theme.Material3.DayNight をAppCompat継承のダミーで提供）
+          # styles.xml (Theme.Material3.DayNight をAppCompatでダミー提供)
           cat > android/app/src/main/res/values/styles.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
@@ -164,16 +166,6 @@ jobs:
             </style>
           </resources>
           EOF
-
-          echo "Remaining res XML:"
-          find android/app/src/main/res -name "*.xml" -maxdepth 3 | sed 's/^/  /' || true
-
-      # Kotlinファイルが残っていれば退避（保険）
-      - name: Temporarily hide Kotlin sources
-        shell: bash
-        run: |
-          find android/app/src/main -name "*.kt" -exec bash -lc 'mv "$1" "$1.bak"' _ {} \; || true
-          echo "Remaining sources:"; find android/app/src/main -maxdepth 5 -type f | sed 's/^/  /' || true
 
       - name: Clean and Assemble app (no wrapper)
         uses: gradle/gradle-build-action@v3
