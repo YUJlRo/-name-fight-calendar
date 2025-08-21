@@ -30,6 +30,15 @@ android {
     }
 }
 
+// Kotlin旧版の重複を排除し、1.8.22に固定（トランジティブ対策）
+configurations.all {
+    exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
+    exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
+    resolutionStrategy {
+        force("org.jetbrains.kotlin:kotlin-stdlib:1.8.22")
+    }
+}
+
 dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
 }
