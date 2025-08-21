@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag for release (e.g. v0.9.0-beta37)'
+        description: 'Tag for release (e.g. v0.9.0-beta38)'
         required: true
-        default: 'v0.9.0-beta37'
+        default: 'v0.9.0-beta38'
 
 permissions:
   contents: write
@@ -34,12 +34,8 @@ jobs:
         shell: bash
         run: |
           cat > android/settings.gradle.kts << 'EOF'
-          pluginManagement {
-            repositories { google(); mavenCentral(); gradlePluginPortal() }
-          }
-          dependencyResolutionManagement {
-            repositories { google(); mavenCentral() }
-          }
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositories { google(); mavenCentral() } }
           rootProject.name = "fight-calendar"
           include(":app")
           EOF
@@ -113,29 +109,71 @@ jobs:
           }
           EOF
 
-      - name: Remove all res under any sourceSet and recreate minimal values/strings.xml
+      # すべての res を削除 → 最小 strings.xml / attrs.xml / styles.xml を生成（Material3参照をダミー解決）
+      - name: Wipe res and create minimal strings/attrs/styles
         shell: bash
         run: |
           set -eux
-          # すべてのresを削除（main/debug/releaseなど全ソースセット）
           find android/app/src -type d -name "res" -exec rm -rf {} + || true
-          # main に最小の values/strings.xml を作成
           mkdir -p android/app/src/main/res/values
+
+          # strings.xml
           cat > android/app/src/main/res/values/strings.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
             <string name="app_name">Fight Calendar</string>
           </resources>
           EOF
-          echo "Remaining res XML:"
-          find android/app/src -name "*.xml" -maxdepth 5 | sed 's/^/  /' || true
 
-      - name: Find references to Material3/theme attributes (debug aid)
+          # attrs.xml（Material3で参照されがちな属性をダミー定義）
+          cat > android/app/src/main/res/values/attrs.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+            <attr name="colorPrimary" format="color"/>
+            <attr name="colorOnPrimary" format="color"/>
+            <attr name="colorPrimaryContainer" format="color"/>
+            <attr name="colorOnPrimaryContainer" format="color"/>
+            <attr name="colorSecondary" format="color"/>
+            <attr name="colorOnSecondary" format="color"/>
+            <attr name="colorSecondaryContainer" format="color"/>
+            <attr name="colorOnSecondaryContainer" format="color"/>
+            <attr name="colorTertiary" format="color"/>
+            <attr name="colorOnTertiary" format="color"/>
+            <attr name="colorSurface" format="color"/>
+            <attr name="colorOnSurface" format="color"/>
+          </resources>
+          EOF
+
+          # styles.xml（Theme.Material3.DayNight をAppCompat継承のダミーで提供）
+          cat > android/app/src/main/res/values/styles.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+            <style name="Theme.Material3.DayNight" parent="@style/Theme.AppCompat.Light.NoActionBar">
+              <item name="colorPrimary">#6200EE</item>
+              <item name="colorOnPrimary">#FFFFFF</item>
+              <item name="colorPrimaryContainer">#BB86FC</item>
+              <item name="colorOnPrimaryContainer">#000000</item>
+              <item name="colorSecondary">#03DAC5</item>
+              <item name="colorOnSecondary">#000000</item>
+              <item name="colorSecondaryContainer">#018786</item>
+              <item name="colorOnSecondaryContainer">#FFFFFF</item>
+              <item name="colorTertiary">#FF5722</item>
+              <item name="colorOnTertiary">#FFFFFF</item>
+              <item name="colorSurface">#FFFFFF</item>
+              <item name="colorOnSurface">#000000</item>
+            </style>
+          </resources>
+          EOF
+
+          echo "Remaining res XML:"
+          find android/app/src/main/res -name "*.xml" -maxdepth 3 | sed 's/^/  /' || true
+
+      # Kotlinファイルが残っていれば退避（保険）
+      - name: Temporarily hide Kotlin sources
         shell: bash
         run: |
-          echo "---- Grep Theme.Material3 / colorOnPrimary references ----"
-          (grep -RIn "Theme.Material3" android/app || true) | sed 's/^/  /'
-          (grep -RIn "colorOnPrimary" android/app || true) | sed 's/^/  /'
+          find android/app/src/main -name "*.kt" -exec bash -lc 'mv "$1" "$1.bak"' _ {} \; || true
+          echo "Remaining sources:"; find android/app/src/main -maxdepth 5 -type f | sed 's/^/  /' || true
 
       - name: Clean and Assemble app (no wrapper)
         uses: gradle/gradle-build-action@v3
@@ -149,8 +187,8 @@ jobs:
       - name: Prepare artifacts
         shell: bash
         run: |
-          APK=$(find android -path "*/outputs/apk/debug/*.apk" -name "*.apk" | head -n 1)
-          echo "APK=$APK"
+          APK=$(find android -path "*/outputs/apk/debug/*.apk" -name "*.apk" | head -n 1 || true)
+          echo "APK=${APK:-NOT_FOUND}"
           mkdir -p artifacts
           if [ -n "$APK" ]; then
             cp "$APK" artifacts/app-debug.apk
