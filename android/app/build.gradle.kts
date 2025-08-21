@@ -1,4 +1,4 @@
-// android/app/build.gradle.kts （Java最小構成）
+// android/app/build.gradle.kts（Java最小構成＋Kotlin重複除去）
 
 plugins {
     id("com.android.application")
@@ -32,6 +32,20 @@ android {
     }
 }
 
+// Kotlin旧JDKモジュールを排除し、stdlibを1.8.22に統一
+configurations.all {
+    exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
+    exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlin" && requested.name == "kotlin-stdlib") {
+            useVersion("1.8.22")
+        }
+    }
+    resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:1.8.22")
+}
+
 dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
+    // 念のため明示（不要なら削除可）
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.22")
 }
