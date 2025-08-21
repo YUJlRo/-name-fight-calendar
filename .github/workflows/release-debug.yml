@@ -134,6 +134,23 @@ jobs:
           find android/app/src/main -name "*.kt" -exec bash -lc 'mv "$1" "$1.bak"' _ {} \; || true
           echo "Remaining sources:"; find android/app/src/main -maxdepth 5 -type f | sed 's/^/  /' || true
 
+      - name: Wipe Material3 resources and create minimal strings.xml
+        shell: bash
+        run: |
+          set -eux
+          rm -rf android/app/src/main/res/values* || true
+          mkdir -p android/app/src/main/res/values
+          cat > android/app/src/main/res/values/strings.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+            <string name="app_name">Fight Calendar</string>
+          </resources>
+          EOF
+          echo "----- values/strings.xml -----"
+          cat android/app/src/main/res/values/strings.xml || true
+          echo "Remaining res XML:"
+          find android/app/src/main/res -name "*.xml" -maxdepth 3 | sed 's/^/  /' || true
+
       - name: Assemble app (no wrapper)
         uses: gradle/gradle-build-action@v3
         with:
